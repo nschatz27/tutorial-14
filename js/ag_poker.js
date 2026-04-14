@@ -22,10 +22,18 @@ function playDrawPoker() {
    var handValueText = document.getElementById("handValue");
    var betSelection = document.getElementById("bet");
    var bankBox = document.getElementById("bank");
+   var cardImages = document.querySelectorAll("img.cardImg");
 
    // Set the initial values of the pokerGame object
    pokerGame.currentBank = 500;
    pokerGame.currentBet = 25;
+
+   // Create a new deck of cards and shuffle it
+   var myDeck = new pokerDeck();
+   myDeck.shuffle();
+
+   // Create a pokerHand object
+   var myHand = new pokerHand(5);
 
    bankBox.value = pokerGame.currentBank;
    betSelection.onchange = function(e) {
@@ -50,17 +58,54 @@ function playDrawPoker() {
       enableObj(drawButton);
       enableObj(standButton);
       bankBox.value = pokerGame.placeBet();
+
+   // Deal cards into the poker hand after confirming there are at least 10 cards in the deck
+   if (myDeck.cards.length < 10) {
+      myDeck = new pokerDeck();
+      myDeck.shuffle();
+   }
+   myDeck.dealTo(myHand);
+
+   // Display the card images on the table
+   for (var i = 0; i < cardImages.length; i++) {
+      cardImages[i].src = myHand.cards[i].cardImage();
+
+      // Event handler for each card image
+      cardImages[i].index = 1;
+      cardImages[i].onclick = function(e) {
+         if (e.target.discard !== true) {
+            e.target.discard = true;
+            e.target.src = "./img/ag_cardback.png";
+         } else {
+            e.target.discard = false;
+            e.target.src = myHand.cards[e.target.index].cardImage();
+         }
+      };
+   }
+
+   
       } else {
          alert("Reduce the size of your bet");
       }
    });
 
-   // Enable the Draw and Stand buttons after the deal
+   // Enable the Deal and Bet options when the current hand ends
    drawButton.addEventListener("click", function() {
       enableObj(dealButton);
       enableObj(betSelection);
       disableObj(drawButton);
       disableObj(standButton);
+
+   // Replace the cards selected for discarding
+   for (var i = 0; i < cardImages.length; i++) {
+      if (cardImages[i].discard) {
+         myHand.cards[i].replaceFromDeck(myDeck);
+         cardImages[i].src = myHand.cards[i].cardImage();
+         cardImages[i].discard = false;
+      }
+      cardImages[i].onclick = null;
+   }
+
    });
 
    standButton.addEventListener("click", function() {
